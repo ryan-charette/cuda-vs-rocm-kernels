@@ -68,6 +68,4 @@ If `nvcc` is unavailable, configure with `-DPGKL_ENABLE_CUDA=OFF`.
 
 ## Near-term milestones
 
-1. Day 2: repo scaffold, CMake, README, placeholder source files
-2. Day 3+: CPU baseline implementations
-3. Later: CUDA kernels, benchmark harness, profiling, analysis
+CPU baseline implementations
