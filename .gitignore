@@ -1,0 +1,39 @@
+# Build output
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+Makefile
+
+# Binaries / objects / libs
+*.o
+*.obj
+*.so
+*.a
+*.out
+*.exe
+
+# CUDA / profiling
+*.nvvp
+*.nsys-rep
+*.ncu-rep
+
+# Python
+__pycache__/
+*.pyc
+
+# Editors
+.vscode/
+.idea/
+.DS_Store
+
+# Generated results
+results/raw/*
+results/plots/*
+results/profiles/*
+
+# Keep directory structure
+!results/raw/.gitkeep
+!results/plots/.gitkeep
+!results/profiles/.gitkeep
