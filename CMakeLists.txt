@@ -9,8 +9,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(PGKL_ENABLE_CUDA "Build CUDA backend" ON)
 option(PGKL_ENABLE_HIP  "Build HIP backend" OFF)
 
-add_library(pgkl_common INTERFACE)
-target_include_directories(pgkl_common INTERFACE ${PROJECT_SOURCE_DIR}/include)
+add_library(pgkl_common STATIC
+  src/common/cli.cpp
+)
+target_include_directories(pgkl_common PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_library(pgkl_cpu STATIC
   src/cpu/reduction_cpu.cpp
@@ -30,12 +32,6 @@ if(PGKL_ENABLE_CUDA)
       set(CMAKE_CUDA_ARCHITECTURES $ENV{CUDAARCHS})
     endif()
 
-    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-      message(WARNING "CMAKE_CUDA_ARCHITECTURES is not set. In Colab, export CUDAARCHS first.")
-    else()
-      message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
-    endif()
-
     add_library(pgkl_cuda STATIC
       src/cuda/reduction_cuda.cu
       src/cuda/stencil2d_cuda.cu
@@ -47,8 +43,6 @@ if(PGKL_ENABLE_CUDA)
       CUDA_STANDARD_REQUIRED ON
     )
     target_link_libraries(pgkl_cuda PUBLIC pgkl_common)
-  else()
-    message(WARNING "CUDA compiler not found. Building CPU-only.")
   endif()
 endif()
 
