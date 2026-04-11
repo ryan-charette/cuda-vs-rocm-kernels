@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "pgkl/cli.hpp"
-#include "pglk/reduction.hpp"
+#include "pgkl/reduction.hpp"
 #include "pgkl/types.hpp"
 
 int main(int argc, char** argv) {
