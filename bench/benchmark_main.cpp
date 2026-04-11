@@ -4,8 +4,11 @@
 #include <vector>
 
 #include "pgkl/cli.hpp"
-#include "pgkl/reduction.hpp"
+#include "pgkl/matmul_tiled.hpp"
+#include "pglk/reduction.hpp"
+#include "pgkl/stencil2d.hpp"
 #include "pgkl/types.hpp"
+#include "pgkl/utils.hpp"
 
 int main(int argc, char** argv) {
   using clock = std::chrono::high_resolution_clock;
@@ -28,22 +31,55 @@ int main(int argc, char** argv) {
     return 2;
   }
 
+  std::cout << std::fixed << std::setprecision(6);
+
   if (cfg.kernel != pgkl::Kernel::Reduction) {
-    std::cerr << "Not implemented.\n";
-    return 3;
+    std::vector<float> input = pgkl::make_patterned_vector(cfg.size);
+
+    auto start = clock::now();
+    float result = pgkl::reduction_cpu(input);
+    auto end = clock::now();
+
+    std::chrono:duration<double, std::milli> ms = end - start;
+    std::cout << "result=" << result << "\n";
+    std::cout << "time_ms=" << ms.count() << "\n";
+    return 0;
   }
 
-  std::vector<float> input(cfg.size, 1.0f);
+  if (cfg.kernel == pgkl::Kernel::Stencil2D) {
+    const std::size_t rows = cfg.size;
+    const std::size_t cols = cfg.size;
 
-  auto start = clock::now();
-  float result = pgkl::reduction_cpu(input);
-  auto end = clock::now();
+    std::vector<float> input = pgkl::make_grid(rows, cols);
+    std::vector<float> output;
 
-  std::chrono::duration<double, std::milli> ms = end - start;
+    auto start = clock::now();
+    pgkl::stencil2d_cpu(input, output, rows, cols);
+    auto end = clock::now();
 
-  std::cout << std::fixed << std:setprecision(3);
-  std::cout << "result=" << result << "\n";
-  std::cout << "time_ms=" << ms.count() << "\n";
+    std::chrono::duration<double, std::milli> ms = end - start;
+    std::cout << "checksum=" << pgkl::checksum(output) << "\n";
+    std::cout << "time_ms=" << ms.count() << "\n";
+    return 0;
+  }
 
-  return 0;
+  if (cfg.kernel == pgkl::Kernel::MatMulTiled) {
+    const std::size_t N = cfg.size;
+
+    std::vector<float> A = pgkl::make_patterned_vector(N * N);
+    std::vector<float> B = pgkl::make_patterned_vector(N * N);
+    std::vector<float> C;
+
+    auto start = clock::now();
+    pgkl::matmul_tiled_cpu(A, B, C, N, N, N, 32);
+    auto end = clock::now();
+
+    std::chrono::duration<double, std::milli> ms = end - start;
+    std::cout << "checksum=" << pgkl::checksum(C) << "\n";
+    std::cout << "time_ms=" << ms.count() << "\n";
+    return 0;
+  }
+
+  std::cerr << "Unsupported kernel.\n"
+  return 3;
 }
