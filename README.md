@@ -68,4 +68,4 @@ If `nvcc` is unavailable, configure with `-DPGKL_ENABLE_CUDA=OFF`.
 
 ## Near-term milestones
 
-For CPU implementations: shared test utilities, deterministic input generation, correctness checks
+CUDA implementations
