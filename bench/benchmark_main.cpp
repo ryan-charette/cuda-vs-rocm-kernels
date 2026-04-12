@@ -33,28 +33,29 @@ auto measure_average_ms(const int repeats, Fn&& fn) -> double {
     return total.count() / static_cast<double>(repeats);
 }
 
-    void print_result(const pgkl::BenchConfig& cfg,
-                      const std::string& metric_name,
-                      double metric_value,
-                      double avg_time_ms) {
-        std::cout << std::fixed << std::setprecision(6);
+void print_result(const pgkl::BenchConfig& config, const BenchResult& result) {
+    std::cout << std::fixed << std::setprecision(6);
 
-        if (cfg.format == pgkl::OutputFormat::CSV) {
-            std::cout << "backend,kernel,size,repeats,metric_name,metric_value,avg_time_ms\n";
-            std::cout << pgkl::to_string(cfg.backend) << ","
-                      << pgkl::to_string(cfg.kernel) << ","
-                      << cfg.size << ","
-                      << cfg.repeats << ","
-                      << metric_name << ","
-                      << metric_value << ","
-                      << avg_time_ms << "\n";
-        } else {
-            std::cout << "backend=" << pgkl::to_string(cfg.backend) << "\n";
-            std::cout << "kernel=" << pgkl::to_string(cfg.kernel) << "\n";
-            std::cout << "size=" << cfg.size << "\n";
-            std::cout << "repeats=" << cfg.repeats << "\n";
-            std::cout << metric_name << "=" << metric_value << "\n";
-            std::cout << "avg_time_ms" << avg_time_ms << "\n";
+    if (config.format == pgkl::OutputFormat::CSV) {
+        std::cout << "backend,kernel,size,repeats,metric_name,metric_value,avg_time_ms\n";
+        std::cout << pgkl::to_string(config.backend) << ','
+                  << pgkl::to_string(config.kernel) << ','
+                  << config.size << ','
+                  << config.repeats << ','
+                  << config.tile_size << ','
+                  << result.metric_name << ','
+                  << result.metric_value << ','
+                  << result.average_time_ms << '\n';
+        return;
+    }
+    
+    std::cout << "backend=" << pgkl::to_string(config.backend) << '\n';
+    std::cout << "kernel=" << pgkl::to_string(config.kernel) << '\n';
+    std::cout << "size=" << config.size << '\n';
+    std::cout << "repeats=" << config.repeats << '\n';
+    std::cout << "tile_size=" << config.tile_size << 'n';
+    std::cout << result.metric_name << '=' << result.metric_value << '\n';
+    std::cout << "avg_time_ms" << result.average_time_ms << '\n';
         }
     }
     
