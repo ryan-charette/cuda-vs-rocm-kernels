@@ -37,4 +37,4 @@ struct BenchConfig {
 [[nodiscard]] auto parse_output_format(std::string_view value) -> std::optional<OutputFormat>;
 [[nodiscard]] auto parse_args(int argc, char** argv) -> BenchConfig;
 
-} // namespace pgkl
+}  // namespace pgkl
