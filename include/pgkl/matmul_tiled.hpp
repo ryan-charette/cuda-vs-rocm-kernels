@@ -1,16 +1,16 @@
 #pragma once
 
 #include <cstddef>
-#include <vector>
+#include <span>
 
 namespace pgkl {
 
-    void matmul_tiled_cpu(const std::vector<float>& A,
-                          const std::vector<float>& B,
-                          std::vector<float>& C,
-                          std::size_t M,
-                          std::size_t N,
-                          std::size_t K,
-                          std::size_t tile_size = 32);
+void matmul_tiled_cpu(std::span<const float> a,
+                      std::span<const float> b,
+                      std::span<float>& c,
+                      std::size_t m,
+                      std::size_t n,
+                      std::size_t k,
+                      std::size_t tile_size = 32);
 
 } // namespace pgkl
