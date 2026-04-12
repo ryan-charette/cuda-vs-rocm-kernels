@@ -17,6 +17,10 @@ namespace pgkl {
         return v;
     }
 
+    inline std::vector<float> make_constant_vector(std::size_t n, float value) {
+        return std::vector<float>(n, value);
+    }
+
     // Creates a 2D grid stores as a flat 1D vector
     // values repeat from 0.0 to 2.0
     inline std::vector<float> make_grid(std::size_t rows, std::size_t cols) {
@@ -27,6 +31,10 @@ namespace pgkl {
             }
         }
         return grid;
+    }
+
+    inline std::vector<float> make_constant_grid(std::size_t rows, std::size_t cols float value) {
+        return std::vector<float>(rows * cols, value);
     }
 
     inline bool nearly_equal(float a, float b, float atol = 1e-5f, float rtol = 1e-5f) {
