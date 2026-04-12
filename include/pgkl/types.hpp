@@ -48,4 +48,4 @@ inline auto operator<<std::ostream& os, const Backend backend) -> std::ostream& 
 inline auto operator<<std::ostream& os, const Kernel kernel) -> std::ostream& {
     return os << to_string(kernel);
     
-}} // namespace pgkl
+}}  // namespace pgkl
