@@ -13,6 +13,26 @@
 
 namespace {
 
+using clock_type = std::chrono::steady_clock;
+
+struct BenchResult {
+    std::string metric_name;
+    double metric_value{};
+    double average_time_ms{};
+};
+
+template <typename Fn>
+auto measure_average_ms(const int repeats, Fn&& fn) -> double {
+    auto total = std::chrono::duration<double, std::milli>::zero();
+    for (int iteration = 0; iteration < repeats; ++iteration) {
+        const auto start = clock_type::now();
+        fn();
+        const auto stop = clock_type::now();
+        total += stop - start;
+    }
+    return total.count() / static_cast<double>(repeats);
+}
+
     void print_result(const pgkl::BenchConfig& cfg,
                       const std::string& metric_name,
                       double metric_value,
