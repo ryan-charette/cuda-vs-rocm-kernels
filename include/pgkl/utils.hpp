@@ -89,4 +89,12 @@ namespace pgkl {
     });
 }
 
+[[nodiscard]] inline auto square_dimension_from_area(const std::size_t element_count) -> std::size_t {
+    const auto side = static_cast<std::size_t>(std::sqrt(static_cast<long double>(element_count)));
+    if (side * side != element_count) {
+        throw std::invalid_argument("size must be a perfect square for a square-grid kernel");
+    }
+    return side;
+}
+
 }  // namespace pgkl
