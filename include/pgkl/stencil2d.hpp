@@ -10,4 +10,4 @@ void stencil2d_cpu(std::span<const float> input,
                    std::size_t rows,
                    std::size_t cols);
 
-} // namespace pgkl
+}  // namespace pgkl
