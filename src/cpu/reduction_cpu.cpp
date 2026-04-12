@@ -2,12 +2,12 @@
 
 namespace pgkl {
 
-  float reduction_cpu(const std::vector<float>& input) {
-    float sum = 0.0f;
+auto reduction_cpu(const std::span<const float> input) -> float {
+    float sum = 0.0F;
     for (float x : input) {
-      sum += x;
+        sum += x;
     }
     return sum;
-  }
+}
 
 } // namespace pgkl
