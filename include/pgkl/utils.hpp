@@ -37,6 +37,14 @@ namespace pgkl {
         return std::vector<float>(rows * cols, value);
     }
 
+    inline std::vector<float> make_identity_matrix(std::size_t n) {
+        std::vector<float> m(n * n, 0.0f);
+        for (std::size_t i = 0; i < n; i++) {
+            m[i * n + i] = 1.0f;
+        }
+        return m;
+    }
+
     inline bool nearly_equal(float a, float b, float atol = 1e-5f, float rtol = 1e-5f) {
         const float diff = std::fabs(a - b);
         return diff <= (atol + rtol * std::max(std::fabs(a), std::fabs(b)));
