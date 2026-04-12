@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
+#include <span>
 
 namespace pgkl {
 
-    float reduction_cpu(const std::vector<float>& input);
-    float reduction_cuda(const std::vector<float>& input);
+[[nodiscard]] auto reduction_cpu(std::span<const float> input) -> float;
+[[nodiscard]] auto reduction_cuda(std::span<const float> input) -> float;
 
 } // namespace pgkl
