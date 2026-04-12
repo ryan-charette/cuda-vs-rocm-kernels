@@ -43,4 +43,58 @@ namespace pgkl {
         }
     }
 
+    float reduction_cuda(const std::vector<float>& input) {
+        if (input.empty()) {
+            return 0.0f;
+        }
+
+        const int threadsPerBlock = 256;
+
+        float* d_input = nullptr;
+        check_cuda(
+            cudaMalloc((void**)&d_input, input.size() * sizeof(float)),
+            "cudaMalloc d_input failed"
+        );
+
+        check_cuda(
+            cudaMemcpy(d_input, input.data(), input.size() * sizeof(float), cudaMemcpyHostToDevice),
+            "cudaMemcpy host to device failed"
+        );
+
+        int current_size = input.size();
+        float* d_current = d_input;
+
+        while (current_size > 1) {
+            int blocksPerGrid = (current_size + threadsPerBlock - 1) / threadsPerBlock;
+
+            float* d_partial_sums = nullptr;
+            check_cuda(
+                cudaMalloc((void**)&d_partial_sums, blocksPerGrid * sizeof(float)),
+                "cudaMalloc d_partial_sums failed"
+            );
+
+            reduction_kernel<<<blocksPerGrid, threadsPerBlock, threadsPerBlock * sizeof(float)>>>(
+                d_current, 
+                d_partial_sums,
+                current_size
+            );
+
+            check_cuda(cudaGetLastError(), "kernel launch failed");
+            check_cuda(cudaDeviceSynchronize(), "kernel execution failed");
+
+            cudaFree(d_current);
+            d_current = d_partial_sums;
+            current_size = blocksPerGrid;
+        }
+
+        float result = 0.0f;
+        check_cuda(
+            cudaMemcpy(&result, d_current, sizeof(float), cudaMemcpyDeviceToHost),
+            "cudaMemcpy device to host failed"
+        );
+
+        cudaFree(d_current);
+        return result;
+    }
+
     } // namespace pgkl
