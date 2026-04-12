@@ -1,36 +1,40 @@
 #pragma once
 
 #include <cstddef>
-#include <string>
+#include <optional>
+#include <string_view>
 
 #include "pgkl/types.hpp"
 
 namespace pgkl {
 
-    enum class OutputFormat {
-        Text,
-        CSV
-    };
+enum class OutputFormat {
+    Text,
+    CSV,
+};
 
-    inline std::string_to_string(OutputFormat f) {
-        switch(f) {
-            case OutputFormat::Text: return "text";
-            case OutputFormat::CSV:  return "csv";
-        }
-        return "unknown";
+[[nodiscard]] constexpr std::string_view to_string(const OutputFormat format) noexcept {
+    switch(format) {
+        case OutputFormat::Text: 
+            return "text";
+        case OutputFormat::CSV:  
+            return "csv";
     }
+    return "unknown";
+}
 
-    struct BenchConfig {
-        Backend backend = Backend::CPU;
-        Kernel kernel = Kernel::Reduction;
-        std::size_t size = 1 << 20;
-        int repeats = 5;
-        OutputFormat format = OutputFormat::Text;
-    };
+struct BenchConfig {
+    Backend backend{Backend::CPU};
+    Kernel kernel{Kernel::Reduction};
+    std::size_t size{1u << 20};
+    int repeats{5};
+    std::size_t tile_size{32};
+    OutputFormat format = OutputFormat::Text;
+};
 
-    bool parse_backend(const std::string& s, Backend& out);
-    bool parse_kernel(const std::string& s, Kernel& out);
-    bool parse_output_format(const std::string& s, OutputFormat& out);
-    BenchConfig parse_args(int argc, char** argv);
+[[nodiscard]] auto parse_backend(std::string_view value) -> std::optional<Backend>;
+[[nodiscard]] auto parse_kernel(std::string_view value) -> std::optional<Kernel>;
+[[nodiscard]] auto parse_output_format(std::string_view value) -> std::optional<OutputFormat>;
+[[nodiscard]] auto parse_args(int argc, char** argv) -> BenchConfig;
 
 } // namespace pgkl
