@@ -3,78 +3,90 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
+#include <numeric>
+#include <ranges>
+#include <span>
+#include <stdexcept>
 #include <vector>
 
 namespace pgkl {
 
-    // Creates a vector of length n filled with a repeating pattern
-    // ex: [-2.0, -1.75, -1.5, ..., 1.75, 2.0, repeats]
-    inline std::vector<float> make_patterned_vector(std::size_t n) {
-        std::vector<float> v(n);
-        for (std::size_t i = 0; i < n; i++) {
-            v[i] = ((i % 17) - 8) * 0.25f;
+[[nodiscard]] inline auto make_patterned_vector(const std::size_t n) -> std::vector<float> {
+    auto values = std::vector<float>(n);
+    for (const auto index : std::views::iota(std::size_t{0}, n)) {
+        const auto pattern = static_cast<int>(index % 17U) - 8;
+        values[index] = static_cast<float>(pattern) * 0.25F;
+    }
+    return values;
+}
+
+[[nodiscard]] inline auto make_constant_vector(const std::size_t n, const float value) -> std::vector<float> {
+    return std::vector<float>(n, value);
+}
+
+[[nodiscard]] inline auto make_grid(const std::size_t rows, const std::size_t cols) -> std::vector<float> {
+    auto grid = std::vector<float>(rows * cols);
+    for (const auto row : std::views::iota(std::size_t{0}, rows)) {
+        for (const auto col : std::views::iota(std::size_t{0}, cols)) {
+            grid[(row * cols) + col] = static_cast<float>(((row * cols) + col) % 21U) * 0.1F;
         }
-        return v;
     }
+    return grid;
+}
 
-    inline std::vector<float> make_constant_vector(std::size_t n, float value) {
-        return std::vector<float>(n, value);
+[[nodiscard]] inline auto make_constant_grid(const std::size_t rows,
+                                             const std::size_t cols,
+                                             const float value) -> std::vector<float> {
+    return std::vector<float>(rows * cols, value);
+}
+
+[[nodiscard]] inline auto make_identity_matrix(const std::size_t n) -> std::vector<float> {
+    auto matrix = std::vector<float>(n * n, 0.0F);
+    for (const auto index : std::views::iota(std::size_t{0}, n)) {
+        matrix[(index * n) + index] = 1.0F;
     }
+    return matrix;
+}
 
-    // Creates a 2D grid stores as a flat 1D vector
-    // values repeat from 0.0 to 2.0
-    inline std::vector<float> make_grid(std::size_t rows, std::size_t cols) {
-        std::vector<float> grid(rows * cols);
-        for (std::size_t r = 0; r < rows; r++) {
-            for (std::size_t c = 0; c < cols; c++) {
-                grid[r * cols + c] = ((r * cols + c) % 21) * 0.1f;
-            }
+[[nodiscard]] inline auto nearly_equal(const float a,
+                                       const float b,
+                                       const float atol = 1.0e-5F,
+                                       const float rtol = 1.0e-5F) -> bool {
+    const auto diff = std::fabs(a - b);
+    return diff <= (atol + (rtol * std::max(std::fabs(a), std::fabs(b))));
+}
+
+[[nodiscard]] inline auto vectors_nearly_equal(const std::span<const float> lhs,
+                                               const std::span<const float> rhs,
+                                               const float atol = 1.0e-5F,
+                                               const float rtol = 1.0e-5F,
+                                               std::size_t* bad_index = nullptr) -> bool {
+    if (lhs.size() != rhs.size()) {
+        if (bad_index != nullptr) {
+            *bad_index = std::numeric_limits<std::size_t>::max();
         }
-        return grid;
+        return false;
     }
 
-    inline std::vector<float> make_constant_grid(std::size_t rows, std::size_t cols float value) {
-        return std::vector<float>(rows * cols, value);
-    }
+    const auto mismatch = std::ranges::mismatch(lhs, rhs, [=](const float left, const float right) {
+        return nearly_equal(left, right, atol, rtol);
+    });
 
-    inline std::vector<float> make_identity_matrix(std::size_t n) {
-        std::vector<float> m(n * n, 0.0f);
-        for (std::size_t i = 0; i < n; i++) {
-            m[i * n + i] = 1.0f;
+    if (mismatch.in1 != lhs.end()) {
+        if (bad_index != nullptr) {
+            *bad_index = static_cast<std::size_t>(std::distance(lhs.begin(), mismatch.in1));
         }
-        return m;
+        return false;
     }
 
-    inline bool nearly_equal(float a, float b, float atol = 1e-5f, float rtol = 1e-5f) {
-        const float diff = std::fabs(a - b);
-        return diff <= (atol + rtol * std::max(std::fabs(a), std::fabs(b)));
-    }
+    return true;
+}
 
-    inline bool vectors_nearly_equal(const std::vector<float>& a,
-                                     const std::vector<float>& b,
-                                     float atol = 1e-5f,
-                                     float rtol = 1e-5f,
-                                     std::size_t* bad_index = nullptr) {
-        if (a.size() != b.size()) {
-            if (bad_index) *bad_index = static_cast<std::size_t>(-1);
-            return false;
-        }
+[[nodiscard]] inline auto checksum(const std::span<const float> values) -> float {
+    return std::transform_reduce(values.begin(), values.end(), 0.0F, std::plus<>{}, [](const float value) {
+        return value;
+    });
+}
 
-        for (std::size_t i = 0; i < a.size(), i++) {
-            if (!nearly_equal(a[i], b[i], atol, rtol)) {
-                if (bad_index) *bad_index = i;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    inline float checksum(const std::vector<float>& v) {
-        float sum = 0.0f;
-        for (float x : v) {
-            sum += x;
-        }
-        return sum;
-    }
-
-} // namespace pgkl
+}  // namespace pgkl
