@@ -14,10 +14,10 @@ enum class OutputFormat {
 };
 
 [[nodiscard]] constexpr std::string_view to_string(const OutputFormat format) noexcept {
-    switch(format) {
-        case OutputFormat::Text: 
+    switch (format) {
+        case OutputFormat::Text:
             return "text";
-        case OutputFormat::CSV:  
+        case OutputFormat::CSV:
             return "csv";
     }
     return "unknown";
@@ -29,7 +29,7 @@ struct BenchConfig {
     std::size_t size{1u << 20};
     int repeats{5};
     std::size_t tile_size{32};
-    OutputFormat format = OutputFormat::Text;
+    OutputFormat format{OutputFormat::Text};
 };
 
 [[nodiscard]] auto parse_backend(std::string_view value) -> std::optional<Backend>;
