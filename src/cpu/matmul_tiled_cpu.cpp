@@ -1,7 +1,6 @@
 #include "pgkl/matmul_tiled.hpp"
 
 #include <algorithm>
-#include <ranges>
 #include <stdexcept>
 
 namespace pgkl {
@@ -26,7 +25,7 @@ void matmul_tiled_cpu(const std::span<const float> a,
         throw std::invalid_argument("matmul_tiled_cpu: c.size() must equal m * n");
     }
 
-    std::ranges::fill(c, 0.0F);
+    std::fill(c.begin(), c.end(), 0.0F);
 
     for (std::size_t row_block = 0; row_block < m; row_block += tile_size) {
         for (std::size_t k_block = 0; k_block < k; k_block += tile_size) {
@@ -35,10 +34,10 @@ void matmul_tiled_cpu(const std::span<const float> a,
                 const auto k_end = std::min(k_block + tile_size, k);
                 const auto col_end = std::min(col_block + tile_size, n);
 
-                for (const auto row : std::views::iota(row_block, row_end)) {
-                    for (const auto depth : std::views::iota(k_block, k_end)) {
+                for (std::size_t row = row_block; row < row_end; ++row) {
+                    for (std::size_t depth = k_block; depth < k_end; ++depth) {
                         const auto a_value = a[(row * k) + depth];
-                        for (const auto col : std::views::iota(col_block, col_end)) {
+                        for (std::size_t col = col_block; col < col_end; ++col) {
                             c[(row * n) + col] += a_value * b[(depth * n) + col];
                         }
                     }
