@@ -59,7 +59,7 @@ void print_result(const pgkl::BenchConfig& config, const BenchResult& result) {
         }
     }
     
-} // namespace
+}  // namespace
 
 int main(int argc, char** argv) {
     try {
