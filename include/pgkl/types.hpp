@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include <string_view>
 
 namespace pgkl {
@@ -40,4 +41,11 @@ enum class Kernel {
     return "unknown";
   }
 
-} // namespace pgkl
+inline auto operator<<std::ostream& os, const Backend backend) -> std::ostream& {
+    return os << to_string(backend);
+}
+
+inline auto operator<<std::ostream& os, const Kernel kernel) -> std::ostream& {
+    return os << to_string(kernel);
+    
+}} // namespace pgkl
