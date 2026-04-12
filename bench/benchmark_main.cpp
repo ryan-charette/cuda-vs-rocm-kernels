@@ -1,6 +1,6 @@
 #include "pgkl/cli.hpp"
 #include "pgkl/matmul_tiled.hpp"
-#include "pglk/reduction.hpp"
+#include "pgkl/reduction.hpp"
 #include "pgkl/stencil2d.hpp"
 #include "pgkl/utils.hpp"
 
@@ -53,7 +53,7 @@ void print_result(const pgkl::BenchConfig& config, const BenchResult& result) {
     std::cout << "kernel=" << pgkl::to_string(config.kernel) << '\n';
     std::cout << "size=" << config.size << '\n';
     std::cout << "repeats=" << config.repeats << '\n';
-    std::cout << "tile_size=" << config.tile_size << 'n';
+    std::cout << "tile_size=" << config.tile_size << '\n';
     std::cout << result.metric_name << '=' << result.metric_value << '\n';
     std::cout << "avg_time_ms" << result.average_time_ms << '\n';
         }
