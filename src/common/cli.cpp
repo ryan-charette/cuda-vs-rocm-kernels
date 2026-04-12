@@ -1,38 +1,61 @@
 #include "pgkl/cli.hpp"
 
-#include <array>
 #include <charconv>
-#include <ranges>
 #include <stdexcept>
 #include <string>
-#include <utility>
+
+namespace {
+
+template <typename Integer>
+auto parse_integer(const char* text, const char* option_name) -> Integer {
+    Integer value{};
+    const auto* begin = text;
+    const auto* end = begin + std::char_traits<char>::length(text);
+    const auto [ptr, error] = std::from_chars(begin, end, value);
+    if (error != std::errc{} || ptr != end) {
+        throw std::runtime_error(std::string{"invalid value for "} + option_name + ": " + text);
+    }
+    return value;
+}
+
+}  // namespace
 
 namespace pgkl {
 
 auto parse_backend(const std::string_view value) -> std::optional<Backend> {
-    static constexpr auto backends = std::to_array<std::pair<std::string_view, Backend>>({
-        {"cpu", Backend::CPU},
-        {"cuda", Backend::CUDA},
-        {"hip", Backend::HIP},
-    });
-    return parse_named_value(value, backends);
+    if (value == "cpu") {
+        return Backend::CPU;
+    }
+    if (value == "cuda") {
+        return Backend::CUDA;
+    }
+    if (value == "hip") {
+        return Backend::HIP;
+    }
+    return std::nullopt;
 }
 
 auto parse_kernel(const std::string_view value) -> std::optional<Kernel> {
-    static constexpr auto kernels = std::to_array<std::pair<std::string_view, Kernel>>({
-        {"reduction", Kernel::Reduction},
-        {"stencil2d", Kernel::Stencil2D},
-        {"matmul", Kernel::MatMulTiled},
-    });
-    return parse_named_value(value, kernels);
+    if (value == "reduction") {
+        return Kernel::Reduction;
+    }
+    if (value == "stencil2d") {
+        return Kernel::Stencil2D;
+    }
+    if (value == "matmul") {
+        return Kernel::MatMulTiled;
+    }
+    return std::nullopt;
 }
 
 auto parse_output_format(const std::string_view value) -> std::optional<OutputFormat> {
-    static constexpr auto formats = std::to_array<std::pair<std::string_view, OutputFormat>>({
-        {"text", OutputFormat::Text},
-        {"csv", OutputFormat::CSV},
-    });
-    return parse_named_value(value, formats);
+    if (value == "text") {
+        return OutputFormat::Text;
+    }
+    if (value == "csv") {
+        return OutputFormat::CSV;
+    }
+    return std::nullopt;
 }
 
 auto parse_args(const int argc, char** argv) -> BenchConfig {
