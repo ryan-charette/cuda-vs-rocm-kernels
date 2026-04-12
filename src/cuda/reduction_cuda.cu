@@ -7,19 +7,11 @@
 #include <vector>
 
 namespace pgkl {
-    namespace {
 
-        #define PGKL_CUDA_CHECK(call)
-            do {
-                cudaError_t err__ = (call);
-                if (err__ != cudaSuccess) {
-                    std::ostringstream oss;
-                    oss << "CUDA error: " << cudaGetErrorString(err__)
-                        << " at " << __FILE__ << ":" << __LINE__;
-                    throw std::runtime_error(oss.str());
-                }
-            } while (0)   
+    void check_cuda(cudaError_t err, const std::string& message) {
+        if (err != cudaSuccess) {
+            throw std::runtime_error(message + ": " + cudaGetErrorString(err));
+        }
+    }
 
-    } // namespace
-
-} // namespace pgkl
+    } // namespace pgkl
