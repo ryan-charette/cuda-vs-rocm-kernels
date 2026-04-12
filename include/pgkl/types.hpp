@@ -1,34 +1,41 @@
 #pragma once
 
-#include <string>
+#include <string_view>
 
 namespace pgkl {
-  enum class Backend {
+
+enum class Backend {
     CPU,
     CUDA,
-    HIP
-  };
+    HIP,
+};
 
-  enum class Kernel {
+enum class Kernel {
     Reduction,
     Stencil2D,
-    MatMulTiled
-  };
+    MatMulTiled,
+};
 
-  inline std::string to_string(Backend b) {
-    switch (b) {
-      case Backend::CPU   return "cpu";
-      case Backend::CUDA: return "cuda";
-      case Backend::HIP:  return "hip";
+[[nodiscard]] constexpr std::string_view to_string(const Backend backend) noexcept {
+    switch (backend) {
+        case Backend::CPU:   
+            return "cpu";
+        case Backend::CUDA: 
+            return "cuda";
+        case Backend::HIP:  
+            return "hip";
     }
     return "unknown";
-  }
+}
 
-  inline std::string to_string(Kernel k) {
-    switch(k) {
-      case Kernel::Reduction:   return "reduction";
-      case Kernel::Stencil2D:   return "stencil2d";
-      case Kernel::MatMulTiled: return "matmul";
+[[nodiscard]] constexpr std::string_view to_string(const Kernel kernel) noexcept {
+    switch(kernel) {
+        case Kernel::Reduction:   
+            return "reduction";
+        case Kernel::Stencil2D:   
+            return "stencil2d";
+        case Kernel::MatMulTiled: 
+            return "matmul";
     }
     return "unknown";
   }
