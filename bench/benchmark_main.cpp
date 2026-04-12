@@ -1,6 +1,8 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "pgkl/cli.hpp"
@@ -9,6 +11,35 @@
 #include "pgkl/stencil2d.hpp"
 #include "pgkl/types.hpp"
 #include "pgkl/utils.hpp"
+
+namespace {
+
+    void print_result(const pgkl::BenchConfig& cfg,
+                      const std::string& metric_name,
+                      double metric_value,
+                      double avg_time_ms) {
+        std::cout << std::fixed << std::setprecision(6);
+
+        if (cfg.format == pgkl::OutputFormat::CSV) {
+            std::cout << "backend,kernel,size,repeats,metric_name,metric_value,avg_time_ms\n";
+            std::cout << pgkl::to_string(cfg.backend) << ","
+                      << pgkl::to_string(cfg.kernel) << ","
+                      << cfg.size << ","
+                      << cfg.repeats << ","
+                      << metric_name << ","
+                      << metric_value << ","
+                      << avg_time_ms << "\n";
+        } else {
+            std::cout << "backend=" << pgkl::to_string(cfg.backend) << "\n";
+            std::cout << "kernel=" << pgkl::to_string(cfg.kernel) << "\n";
+            std::cout << "size=" << cfg.size << "\n";
+            std::cout << "repeats=" << cfg.repeats << "\n";
+            std::cout << metric_name << "=" << metric_value << "\n";
+            std::cout << "avg_time_ms" << avg_time_ms << "\n";
+        }
+    }
+    
+} // namespace
 
 int main(int argc, char** argv) {
   using clock = std::chrono::high_resolution_clock;
