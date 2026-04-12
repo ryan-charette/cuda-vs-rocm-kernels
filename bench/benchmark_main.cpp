@@ -1,16 +1,15 @@
+#include "pgkl/cli.hpp"
+#include "pgkl/matmul_tiled.hpp"
+#include "pglk/reduction.hpp"
+#include "pgkl/stencil2d.hpp"
+#include "pgkl/utils.hpp"
+
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include "pgkl/cli.hpp"
-#include "pgkl/matmul_tiled.hpp"
-#include "pglk/reduction.hpp"
-#include "pgkl/stencil2d.hpp"
-#include "pgkl/types.hpp"
-#include "pgkl/utils.hpp"
 
 namespace {
 
