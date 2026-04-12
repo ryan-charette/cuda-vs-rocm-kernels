@@ -4,9 +4,6 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
-#include <numeric>
-#include <ranges>
-#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -14,7 +11,7 @@ namespace pgkl {
 
 [[nodiscard]] inline auto make_patterned_vector(const std::size_t n) -> std::vector<float> {
     auto values = std::vector<float>(n);
-    for (const auto index : std::views::iota(std::size_t{0}, n)) {
+    for (std::size_t index = 0; index < n; ++index) {
         const auto pattern = static_cast<int>(index % 17U) - 8;
         values[index] = static_cast<float>(pattern) * 0.25F;
     }
@@ -27,8 +24,8 @@ namespace pgkl {
 
 [[nodiscard]] inline auto make_grid(const std::size_t rows, const std::size_t cols) -> std::vector<float> {
     auto grid = std::vector<float>(rows * cols);
-    for (const auto row : std::views::iota(std::size_t{0}, rows)) {
-        for (const auto col : std::views::iota(std::size_t{0}, cols)) {
+    for (std::size_t row = 0; row < rows; ++row) {
+        for (std::size_t col = 0; col < cols; ++col) {
             grid[(row * cols) + col] = static_cast<float>(((row * cols) + col) % 21U) * 0.1F;
         }
     }
@@ -43,7 +40,7 @@ namespace pgkl {
 
 [[nodiscard]] inline auto make_identity_matrix(const std::size_t n) -> std::vector<float> {
     auto matrix = std::vector<float>(n * n, 0.0F);
-    for (const auto index : std::views::iota(std::size_t{0}, n)) {
+    for (std::size_t index = 0; index < n; ++index) {
         matrix[(index * n) + index] = 1.0F;
     }
     return matrix;
@@ -57,8 +54,8 @@ namespace pgkl {
     return diff <= (atol + (rtol * std::max(std::fabs(a), std::fabs(b))));
 }
 
-[[nodiscard]] inline auto vectors_nearly_equal(const std::span<const float> lhs,
-                                               const std::span<const float> rhs,
+[[nodiscard]] inline auto vectors_nearly_equal(const std::vector<float>& lhs,
+                                               const std::vector<float>& rhs,
                                                const float atol = 1.0e-5F,
                                                const float rtol = 1.0e-5F,
                                                std::size_t* bad_index = nullptr) -> bool {
@@ -69,24 +66,23 @@ namespace pgkl {
         return false;
     }
 
-    const auto mismatch = std::ranges::mismatch(lhs, rhs, [=](const float left, const float right) {
-        return nearly_equal(left, right, atol, rtol);
-    });
-
-    if (mismatch.in1 != lhs.end()) {
-        if (bad_index != nullptr) {
-            *bad_index = static_cast<std::size_t>(std::distance(lhs.begin(), mismatch.in1));
+    for (std::size_t index = 0; index < lhs.size(); ++index) {
+        if (!nearly_equal(lhs[index], rhs[index], atol, rtol)) {
+            if (bad_index != nullptr) {
+                *bad_index = index;
+            }
+            return false;
         }
-        return false;
     }
-
     return true;
 }
 
-[[nodiscard]] inline auto checksum(const std::span<const float> values) -> float {
-    return std::transform_reduce(values.begin(), values.end(), 0.0F, std::plus<>{}, [](const float value) {
-        return value;
-    });
+[[nodiscard]] inline auto checksum(const std::vector<float>& values) -> float {
+    float sum = 0.0F;
+    for (const auto value : values) {
+        sum += value;
+    }
+    return sum;
 }
 
 [[nodiscard]] inline auto square_dimension_from_area(const std::size_t element_count) -> std::size_t {
