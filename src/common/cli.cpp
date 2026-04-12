@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 namespace pgkl {
 
@@ -17,6 +18,12 @@ namespace pgkl {
     if (s == "reduction") { out = Kernel::Reduction; return true; }
     if (s == "stencil2d") { out = Kernel::Stencil2D; return true; }
     if (s == "matmul")    { out = Kernel::MatMulTiled; return true; }
+    return false;
+  }
+
+  bool parse_output_format(const std::string& s, OutputFormat& out) {
+    if (s == "text") { out = OutputFormat::Text; return true; }
+    if (s == "csv")  { out = OutputFormat::CSV; return true; }
     return false;
   }
 
@@ -36,6 +43,15 @@ namespace pgkl {
         }
       } else if (arg == "--size" && i + 1 < argc) {
         cfg.size = static_cast<std::size_t>(std::stoull(argv[i++]));
+      } else if (arg == "--repeats" && i + 1 < argc) {
+        cfg.repeats = std::stoi(argv[i++]);
+        if (cfg.repeats <= 0) {
+            throw std::runtime_error("--repeats must be > 0");
+        }
+      } else if (arg == "--format" && i + 1 < argc) {
+        if (!parse_output_format(argv[i++], cfg.format)) {
+            throw std::runtime_error("Invalid output format");
+        }
       } else {
         throw std::runtime_error("Unknown argument: " + arg);
       }
