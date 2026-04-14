@@ -15,4 +15,8 @@ inline void cuda_check(const cudaError_t status, const char* operation) {
     }
 }
 
+[[nodiscard]] constexpr auto ceil_div(const std::size_t value, const std::size_t divisor) noexcept -> std::size_t {
+    return (value + divisor - 1U) / divisor;
+}
+
 }  // namespace pgkl::cuda_detail
