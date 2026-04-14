@@ -39,7 +39,7 @@ if(PGKL_ENABLE_CUDA)
     )
     set_target_properties(pgkl_cuda PROPERTIES
       CUDA_SEPARABLE_COMPILATION ON
-      CUDA_STANDARD 17
+      CUDA_STANDARD 20
       CUDA_STANDARD_REQUIRED ON
     )
     target_link_libraries(pgkl_cuda PUBLIC pgkl_common)
