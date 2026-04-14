@@ -37,7 +37,7 @@ void print_result(const pgkl::BenchConfig& config, const BenchResult& result) {
     std::cout << std::fixed << std::setprecision(6);
 
     if (config.format == pgkl::OutputFormat::CSV) {
-        std::cout << "backend,kernel,size,repeats,metric_name,metric_value,avg_time_ms\n";
+        std::cout << "backend,kernel,size,repeats,tile_size,metric_name,metric_value,avg_time_ms\n";
         std::cout << pgkl::to_string(config.backend) << ','
                   << pgkl::to_string(config.kernel) << ','
                   << config.size << ','
@@ -55,7 +55,7 @@ void print_result(const pgkl::BenchConfig& config, const BenchResult& result) {
     std::cout << "repeats=" << config.repeats << '\n';
     std::cout << "tile_size=" << config.tile_size << '\n';
     std::cout << result.metric_name << '=' << result.metric_value << '\n';
-    std::cout << "avg_time_ms" << result.average_time_ms << '\n';
+    std::cout << "avg_time_ms=" << result.average_time_ms << '\n';
         }
     }
     
