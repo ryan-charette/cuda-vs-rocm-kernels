@@ -68,4 +68,4 @@ If `nvcc` is unavailable, configure with `-DPGKL_ENABLE_CUDA=OFF`.
 
 ## Near-term milestones
 
-CUDA implementations
+Add HIP / ROCm support for reduction kernel.
