@@ -59,6 +59,78 @@ void print_result(const pgkl::BenchConfig& config, const BenchResult& result) {
         }
     }
     
+auto run_reduction(const pgkl::BenchConfig& config) -> BenchResult {
+    const auto input = pgkl::make_patterned_vector(config.size);
+    auto result = 0.0F;
+
+    const auto average_time_ms = measure_average_ms(config.repeats, [&] {
+        if (config.backend == pgkl::Backend::CPU) {
+            result = pgkl::reduction_cpu(input);
+            return;
+        }
+#ifdef PGKL_HAS_CUDA
+        if (config.backend == pgkl::Backend::CUDA) {
+            result = pgkl::reduction_cuda(input);
+            return;
+        }
+#endif
+        throw std::runtime_error(config.backend == pgkl::Backend::HIP
+                                     ? "HIP not implemented"
+                                     : "CUDA not supported");
+    });
+
+    return BenchResult{"result", static_cast<double>(result), average_time_ms};
+}
+
+auto run_stencil(const pgkl::BenchConfig& config) -> BenchResult {
+    const auto side = config.size;
+    const auto input = pgkl::make_grid(side, side);
+    auto output = std::vector<float>(input.size(), 0.0F);
+
+    const auto average_time_ms = measure_average_ms(config.repeats, [&] {
+        if (config.backend == pgkl::Backend::CPU) {
+            pgkl::stencil2d_cpu(input, output, side, side);
+            return;
+        }
+#ifdef PGKL_HAS_CUDA
+        if (config.backend == pgkl::Backend::CUDA) {
+            pgkl::stencil2d_cuda(input, output, side, side);
+            return;
+        }
+#endif
+        throw std::runtime_error(config.backend == pgkl::Backend::HIP
+                                     ? "HIP not implemented"
+                                     : "CUDA not supported");
+    });
+
+    return BenchResult{"checksum", static_cast<double>(pgkl::checksum(output)), average_time_ms};
+}
+
+auto run_matmul(const pgkl::BenchConfig& config) -> BenchResult {
+    const auto side = config.size;
+    const auto a = pgkl::make_patterned_vector(side * side);
+    const auto b = pgkl::make_patterned_vector(side * side);
+    auto c = std::vector<float>(side * side, 0.0F);
+
+    const auto average_time_ms = measure_average_ms(config.repeats, [&] {
+        if (config.backend == pgkl::Backend::CPU) {
+            pgkl::matmul_tiled_cpu(a, b, c, side, side, side, config.tile_size);
+            return;
+        }
+#ifdef PGKL_HAS_CUDA
+        if (config.backend == pgkl::Backend::CUDA) {
+            pgkl::matmul_tiled_cuda(a, b, c, side, side, side, config.tile_size);
+            return;
+        }
+#endif
+        throw std::runtime_error(config.backend == pgkl::Backend::HIP
+                                     ? "HIP not implemented"
+                                     : "CUDA not supported");
+    });
+
+    return BenchResult{"checksum", static_cast<double>(pgkl::checksum(c)), average_time_ms};
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
