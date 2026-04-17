@@ -48,7 +48,7 @@ void print_result(const pgkl::BenchConfig& config, const BenchResult& result) {
                   << result.average_time_ms << '\n';
         return;
     }
-    
+
     std::cout << "backend=" << pgkl::to_string(config.backend) << '\n';
     std::cout << "kernel=" << pgkl::to_string(config.kernel) << '\n';
     std::cout << "size=" << config.size << '\n';
@@ -56,9 +56,8 @@ void print_result(const pgkl::BenchConfig& config, const BenchResult& result) {
     std::cout << "tile_size=" << config.tile_size << '\n';
     std::cout << result.metric_name << '=' << result.metric_value << '\n';
     std::cout << "avg_time_ms=" << result.average_time_ms << '\n';
-        }
-    }
-    
+}
+
 auto run_reduction(const pgkl::BenchConfig& config) -> BenchResult {
     const auto input = pgkl::make_patterned_vector(config.size);
     auto result = 0.0F;
@@ -74,8 +73,14 @@ auto run_reduction(const pgkl::BenchConfig& config) -> BenchResult {
             return;
         }
 #endif
+#ifdef PGKL_HAS_HIP
+        if (config.backend == pgkl::Backend::HIP) {
+            result = pgkl::reduction_hip(input);
+            return;
+        }
+#endif
         throw std::runtime_error(config.backend == pgkl::Backend::HIP
-                                     ? "HIP not implemented"
+                                     ? "HIP not supported"
                                      : "CUDA not supported");
     });
 
@@ -98,8 +103,14 @@ auto run_stencil(const pgkl::BenchConfig& config) -> BenchResult {
             return;
         }
 #endif
+#ifdef PGKL_HAS_HIP
+        if (config.backend == pgkl::Backend::HIP) {
+            pgkl::stencil2d_hip(input, output, side, side);
+            return;
+        }
+#endif
         throw std::runtime_error(config.backend == pgkl::Backend::HIP
-                                     ? "HIP not implemented"
+                                     ? "HIP not supported"
                                      : "CUDA not supported");
     });
 
@@ -123,8 +134,14 @@ auto run_matmul(const pgkl::BenchConfig& config) -> BenchResult {
             return;
         }
 #endif
+#ifdef PGKL_HAS_HIP
+        if (config.backend == pgkl::Backend::HIP) {
+            pgkl::matmul_tiled_hip(a, b, c, side, side, side, config.tile_size);
+            return;
+        }
+#endif
         throw std::runtime_error(config.backend == pgkl::Backend::HIP
-                                     ? "HIP not implemented"
+                                     ? "HIP not supported"
                                      : "CUDA not supported");
     });
 
@@ -140,6 +157,12 @@ int main(int argc, char** argv) {
         if (config.backend == pgkl::Backend::CUDA) {
 #ifndef PGKL_HAS_CUDA
             throw std::runtime_error("CUDA not supported");
+#endif
+        }
+
+        if (config.backend == pgkl::Backend::HIP) {
+#ifndef PGKL_HAS_HIP
+            throw std::runtime_error("HIP not supported");
 #endif
         }
 
@@ -164,4 +187,3 @@ int main(int argc, char** argv) {
         return 1;
     }
 }
-                    
