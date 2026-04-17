@@ -5,6 +5,7 @@ This project is a cross-backend kernel benchmarking project that implements and 
 - **C++ (CPU reference)**
 - **CUDA (NVIDIA GPUs)**
 - **HIP / ROCm (AMD GPUs)**
+- **SYCL (Cross-Vendor GPUs)**
 
 The repository is structured to make implementation details, performance characteristics, and tradeoffs directly comparable across backends.
 
@@ -38,6 +39,7 @@ These kernels were selected to cover a meaningful range of behaviors:
   - tiled matrix multiply
 - CUDA implementations for all three kernels
 - HIP / ROCm implementations for all three kernels
+- SYCL implementations for all three kernels
 - CMake-based multi-backend build system
 - CLI-driven benchmark runner
 - Initial correctness tests
@@ -57,6 +59,7 @@ These kernels were selected to cover a meaningful range of behaviors:
 - CPU builds and runs have been verified
 - CUDA code compiles, but requires additional validation on target hardware
 - HIP integration is complete at the source level, but has not yet been validated on a ROCm system in this environment
+- SYCL integration is complete at the source level, but has not yet been validated on target hardware
 
 ---
 
@@ -121,6 +124,19 @@ If ROCm is not detected automatically:
 -D CMAKE_HIP_COMPILER_ROCM_ROOT=/opt/rocm
 ```
 
+### SYCL
+
+```bash
+cmake -S . -B build-sycl -DPGKL_ENABLE_SYCL=ON -DCMAKE_CXX_COMPILER=dpcpp
+cmake --build build-sycl -j
+```
+
+If your compiler requires a different enable flag, override `PGKL_SYCL_FLAG`, for example:
+
+```bash
+cmake -S . -B build-sycl -DPGKL_ENABLE_SYCL=ON -DPGKL_SYCL_FLAG=-fsycl -DCMAKE_CXX_COMPILER=icpx
+```
+
 ---
 
 ## Run
@@ -176,4 +192,4 @@ Planned additions:
 - profiler captures (Nsight / rocprof)
 - kernel-level metrics (occupancy, bandwidth, achieved FLOPs)
 - roofline-style analysis
-- comparable runs across CPU / CUDA / HIP
+- comparable runs across CPU / CUDA / HIP / SYCL
