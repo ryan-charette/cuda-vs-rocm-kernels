@@ -218,6 +218,54 @@ auto test_matmul_hip() -> bool {
 }
 #endif
 
+#ifdef PGKL_HAS_SYCL
+auto test_reduction_sycl() -> bool {
+    const auto input = pgkl::make_patterned_vector(4096);
+    const auto expected = pgkl::reduction_cpu(input);
+    const auto got = pgkl::reduction_sycl(input);
+    if (!pgkl::nearly_equal(got, expected, 1.0e-4F, 1.0e-4F)) {
+        std::cerr << "[reduction_sycl] expected " << expected << ", got " << got << '\n';
+        return false;
+    }
+    return true;
+}
+
+auto test_stencil_sycl() -> bool {
+    const auto input = pgkl::make_grid(32, 32);
+    auto expected = std::vector<float>(input.size(), 0.0F);
+    auto got = std::vector<float>(input.size(), 0.0F);
+
+    pgkl::stencil2d_cpu(input, expected, 32, 32);
+    pgkl::stencil2d_sycl(input, got, 32, 32);
+
+    std::size_t bad_index = 0;
+    if (!pgkl::vectors_nearly_equal(got, expected, 1.0e-5F, 1.0e-5F, &bad_index)) {
+        std::cerr << "[stencil_sycl] mismatch at index " << bad_index << ": expected " << expected[bad_index]
+                  << ", got " << got[bad_index] << '\n';
+        return false;
+    }
+    return true;
+}
+
+auto test_matmul_sycl() -> bool {
+    const auto a = pgkl::make_patterned_vector(32U * 32U);
+    const auto b = pgkl::make_patterned_vector(32U * 32U);
+    auto expected = std::vector<float>(32U * 32U, 0.0F);
+    auto got = std::vector<float>(32U * 32U, 0.0F);
+
+    pgkl::matmul_tiled_cpu(a, b, expected, 32, 32, 32, 16);
+    pgkl::matmul_tiled_sycl(a, b, got, 32, 32, 32, 16);
+
+    std::size_t bad_index = 0;
+    if (!pgkl::vectors_nearly_equal(got, expected, 1.0e-4F, 1.0e-4F, &bad_index)) {
+        std::cerr << "[matmul_sycl] mismatch at index " << bad_index << ": expected " << expected[bad_index]
+                  << ", got " << got[bad_index] << '\n';
+        return false;
+    }
+    return true;
+}
+#endif
+
 void run_test(const std::string& name, bool (*fn)(), int& passed, int& total) {
     ++total;
     if (fn()) {
@@ -246,6 +294,11 @@ int main() {
     run_test("reduction_hip", test_reduction_hip, passed, total);
     run_test("stencil_hip", test_stencil_hip, passed, total);
     run_test("matmul_hip", test_matmul_hip, passed, total);
+#endif
+#ifdef PGKL_HAS_SYCL
+    run_test("reduction_sycl", test_reduction_sycl, passed, total);
+    run_test("stencil_sycl", test_stencil_sycl, passed, total);
+    run_test("matmul_sycl", test_matmul_sycl, passed, total);
 #endif
 
     std::cout << passed << '/' << total << " tests passed\n";
