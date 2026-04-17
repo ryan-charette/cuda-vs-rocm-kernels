@@ -59,7 +59,7 @@ These kernels were selected to cover a meaningful range of behaviors:
 - CPU builds and runs have been verified
 - CUDA code compiles, but requires additional validation on target hardware
 - HIP integration is complete at the source level, but has not yet been validated on a ROCm system in this environment
-- SYCL integration is complete at the source level, but has not yet been validated on target hardware
+- SYCL integration is complete at the source level, but needs to be validated on both NVIDIA and ROCm hardware
 
 ---
 
