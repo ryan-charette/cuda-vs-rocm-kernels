@@ -1,71 +1,179 @@
-# Portable GPU Kernel Lab: CUDA vs ROCm vs CPU Roofline
+# Portable GPU Kernel Lab
 
-A benchmarking and analysis repo for comparing the same core kernels across:
+This project is a cross-backend kernel benchmarking project that implements and evaluates the same workloads across:
 
-- CPU baseline
-- NVIDIA GPU via CUDA
-- AMD GPU via HIP/ROCm
+- **C++ (CPU reference)**
+- **CUDA (NVIDIA GPUs)**
+- **HIP / ROCm (AMD GPUs)**
 
-## Project status
+The repository is structured to make implementation details, performance characteristics, and tradeoffs directly comparable across backends.
 
-Current scope is locked to three kernels across CPU, CUDA, and HIP/ROCm:
+---
 
-- reduction
-- 2D stencil
-- tiled matrix multiply
+## Scope
 
-The project focuses on:
+The project focuses on three representative kernels:
 
-- correctness across backends
-- fair benchmarking methodology
-- profiling artifacts and explanation
-- roofline-style performance analysis
-- reproducible setup
+1. **Reduction**
+2. **2D stencil**
+3. **Tiled matrix multiply**
 
-## Planned architecture
+These kernels were selected to cover a meaningful range of behaviors:
+
+- hierarchical parallel decomposition (thread / block / grid)
+- synchronization patterns
+- shared memory vs global memory usage
+- memory access patterns and locality
+- compute vs memory bound workloads
+
+---
+
+## Current status
+
+### Implemented
+
+- CPU reference implementations:
+  - reduction
+  - 2D stencil
+  - tiled matrix multiply
+- CUDA implementations for all three kernels
+- HIP / ROCm implementations for all three kernels
+- CMake-based multi-backend build system
+- CLI-driven benchmark runner
+- Initial correctness tests
+
+### In progress
+
+- Full validation on ROCm hardware
+- Additional validation on NVIDIA hardware
+- Structured benchmark output (CSV / JSON)
+- Profiling integration and analysis artifacts
+- Automation scripts for repeatable runs
+
+---
+
+## Validation notes
+
+- CPU builds and runs have been verified
+- CUDA code compiles, but requires additional validation on target hardware
+- HIP integration is complete at the source level, but has not yet been validated on a ROCm system in this environment
+
+---
+
+## Repository layout
 
 ```text
 .
 ├── CMakeLists.txt
-├── README.md
+├── bench/
 ├── cmake/
+├── docs/
 ├── include/
 │   └── pgkl/
+├── results/
+│   ├── plots/
+│   ├── profiles/
+│   └── raw/
+├── scripts/
 ├── src/
 │   ├── common/
 │   ├── cpu/
 │   ├── cuda/
 │   └── hip/
-├── bench/
-├── tests/
-├── scripts/
-├── results/
-│   ├── raw/
-│   ├── plots/
-│   └── profiles/
-└── docs/
-
+└── tests/
 ```
 
-## Backend plan
+---
 
-### CPU
-Reference implementations in C++ used for correctness and baseline timing.
+## Build
+
+### CPU-only
+
+```bash
+cmake -S . -B build -DPGKL_ENABLE_CUDA=OFF
+cmake --build build -j
+```
 
 ### CUDA
-Primary GPU implementation path for development in Google Colab.
 
-### HIP/ROCm
-Scaffolded now, to be implemented and validated later on AMD hardware or a ROCm-capable environment.
+```bash
+export CUDAARCHS=native
+cmake -S . -B build
+cmake --build build -j
+```
 
-## Build plan
+If needed, set `CUDAARCHS` explicitly for your target GPU.
 
-### Colab / CUDA path
-Use a GPU runtime, detect the GPU compute capability, export `CUDAARCHS`, then configure with CMake.
+### HIP / ROCm
 
-### CPU-only fallback
-If `nvcc` is unavailable, configure with `-DPGKL_ENABLE_CUDA=OFF`.
+```bash
+cmake -S . -B build \
+  -DPGKL_ENABLE_CUDA=OFF \
+  -DPGKL_ENABLE_HIP=ON \
+  -DCMAKE_PREFIX_PATH=/opt/rocm
 
-## Near-term milestones
+cmake --build build -j
+```
 
-Add HIP / ROCm support for reduction kernel.
+If ROCm is not detected automatically:
+
+```bash
+-D CMAKE_HIP_COMPILER_ROCM_ROOT=/opt/rocm
+```
+
+---
+
+## Run
+
+### Tests
+
+```bash
+./build/tests/pgkl_tests
+```
+
+### Benchmarks
+
+Reduction:
+
+```bash
+./build/bench/pgkl_bench \
+  --backend cpu \
+  --kernel reduction \
+  --size 1048576 \
+  --repeats 5
+```
+
+Stencil:
+
+```bash
+./build/bench/pgkl_bench \
+  --backend cpu \
+  --kernel stencil2d \
+  --size 1024 \
+  --repeats 5
+```
+
+Matrix multiply:
+
+```bash
+./build/bench/pgkl_bench \
+  --backend cpu \
+  --kernel matmul \
+  --size 512 \
+  --tile-size 32 \
+  --repeats 5
+```
+
+Current output is printed to stdout. Structured result export is being added.
+
+---
+
+## Measurement roadmap
+
+Planned additions:
+
+- structured benchmark outputs under `results/raw/`
+- profiler captures (Nsight / rocprof)
+- kernel-level metrics (occupancy, bandwidth, achieved FLOPs)
+- roofline-style analysis
+- comparable runs across CPU / CUDA / HIP
