@@ -83,6 +83,7 @@ These kernels were selected to cover a meaningful range of behaviors:
 │   ├── cpu/
 │   ├── cuda/
 │   └── hip/
+│   └── sycl/
 └── tests/
 ```
 
