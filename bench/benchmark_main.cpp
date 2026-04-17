@@ -140,9 +140,15 @@ auto run_matmul(const pgkl::BenchConfig& config) -> BenchResult {
             return;
         }
 #endif
+#ifdef PGKL_HAS_SYCL
+        if (config.backend == pgkl::Backend::SYCL) {
+            pgkl::matmul_tiled_sycl(a, b, c, side, side, side, config.tile_size);
+            return;
+        }
+#endif
         throw std::runtime_error(config.backend == pgkl::Backend::HIP
                                      ? "HIP not supported"
-                                     : "CUDA not supported");
+                                     : (config.backend == pgkl::Backend::SYCL ? "SYCL not supported" : "CUDA not supported"));
     });
 
     return BenchResult{"checksum", static_cast<double>(pgkl::checksum(c)), average_time_ms};
@@ -163,6 +169,12 @@ int main(int argc, char** argv) {
         if (config.backend == pgkl::Backend::HIP) {
 #ifndef PGKL_HAS_HIP
             throw std::runtime_error("HIP not supported");
+#endif
+        }
+
+        if (config.backend == pgkl::Backend::SYCL) {
+#ifndef PGKL_HAS_SYCL
+            throw std::runtime_error("SYCL not supported");
 #endif
         }
 
