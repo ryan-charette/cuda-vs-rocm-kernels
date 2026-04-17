@@ -9,6 +9,7 @@ enum class Backend {
     CPU,
     CUDA,
     HIP,
+    SYCL,
 };
 
 enum class Kernel {
@@ -25,6 +26,8 @@ enum class Kernel {
             return "cuda";
         case Backend::HIP:
             return "hip";
+        case Backend::SYCL:
+            return "sycl";
     }
     return "unknown";
 }
