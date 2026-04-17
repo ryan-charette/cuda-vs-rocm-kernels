@@ -5,3 +5,8 @@ if(TARGET pgkl_cuda)
   target_link_libraries(pgkl_tests PRIVATE pgkl_cuda)
   target_compile_definitions(pgkl_tests PRIVATE PGKL_HAS_CUDA=1)
 endif()
+
+if(TARGET pgkl_hip)
+  target_link_libraries(pgkl_tests PRIVATE pgkl_hip)
+  target_compile_definitions(pgkl_tests PRIVATE PGKL_HAS_HIP=1)
+endif()
