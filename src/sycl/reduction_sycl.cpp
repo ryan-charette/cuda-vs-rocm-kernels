@@ -1,6 +1,7 @@
 #include "pgkl/reduction.hpp"
 
 #include "sycl_compat.hpp"
+#include "sycl_timing.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -18,7 +19,7 @@ constexpr std::size_t kWorkgroupSize = 256U;
 
 }  // namespace
 
-auto reduction_sycl(const std::span<const float> input) -> float {
+auto reduction_sycl(const std::span<const float> input, TimingResult* timing) -> float {
     if (input.empty()) {
         return 0.0F;
     }
@@ -26,7 +27,7 @@ auto reduction_sycl(const std::span<const float> input) -> float {
     namespace sycl = pgkl::sycl_compat;
 
     try {
-        sycl::queue queue{sycl::default_selector_v};
+        auto queue = sycl_detail::make_queue(timing);
         auto current = std::vector<float>(input.begin(), input.end());
 
         while (current.size() > 1U) {
@@ -38,7 +39,7 @@ auto reduction_sycl(const std::span<const float> input) -> float {
                 sycl::buffer<float> input_buffer(current.data(), sycl::range<1>(current.size()));
                 sycl::buffer<float> partial_buffer(partial.data(), sycl::range<1>(partial.size()));
 
-                queue.submit([&](sycl::handler& cgh) {
+                const auto event = queue.submit([&](sycl::handler& cgh) {
                     auto in = input_buffer.template get_access<sycl::access::mode::read>(cgh);
                     auto out = partial_buffer.template get_access<sycl::access::mode::discard_write>(cgh);
                     sycl::local_accessor<float, 1> scratch(sycl::range<1>(kWorkgroupSize), cgh);
@@ -66,6 +67,7 @@ auto reduction_sycl(const std::span<const float> input) -> float {
                         });
                 });
                 queue.wait_and_throw();
+                sycl_detail::add_event_kernel_time(event, timing);
             }
 
             current = std::move(partial);
