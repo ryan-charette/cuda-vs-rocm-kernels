@@ -28,8 +28,10 @@ struct BenchConfig {
     Kernel kernel{Kernel::Reduction};
     std::size_t size{1u << 20};
     int repeats{5};
+    int warmups{1};
     std::size_t tile_size{32};
     OutputFormat format{OutputFormat::Text};
+    bool check_correctness{true};
 };
 
 [[nodiscard]] auto parse_backend(std::string_view value) -> std::optional<Backend>;
