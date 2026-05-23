@@ -1,6 +1,7 @@
 #include "pgkl/stencil2d.hpp"
 
 #include "sycl_compat.hpp"
+#include "sycl_timing.hpp"
 
 #include <stdexcept>
 #include <string>
@@ -10,7 +11,8 @@ namespace pgkl {
 void stencil2d_sycl(const std::span<const float> input,
                     std::span<float> output,
                     const std::size_t rows,
-                    const std::size_t cols) {
+                    const std::size_t cols,
+                    TimingResult* timing) {
     if ((rows * cols) != input.size()) {
         throw std::invalid_argument("stencil2d_sycl: rows * cols must equal input.size()");
     }
@@ -21,7 +23,7 @@ void stencil2d_sycl(const std::span<const float> input,
     namespace sycl = pgkl::sycl_compat;
 
     try {
-        sycl::queue queue{sycl::default_selector_v};
+        auto queue = sycl_detail::make_queue(timing);
         sycl::buffer<float> input_buffer(input.data(), sycl::range<1>(input.size()));
         sycl::buffer<float> output_buffer(output.data(), sycl::range<1>(output.size()));
 
@@ -30,7 +32,7 @@ void stencil2d_sycl(const std::span<const float> input,
         const std::size_t global_rows = ((rows + tile_rows - 1U) / tile_rows) * tile_rows;
         const std::size_t global_cols = ((cols + tile_cols - 1U) / tile_cols) * tile_cols;
 
-        queue.submit([&](sycl::handler& cgh) {
+        const auto event = queue.submit([&](sycl::handler& cgh) {
             auto in = input_buffer.template get_access<sycl::access::mode::read>(cgh);
             auto out = output_buffer.template get_access<sycl::access::mode::discard_write>(cgh);
 
@@ -59,6 +61,7 @@ void stencil2d_sycl(const std::span<const float> input,
                 });
         });
         queue.wait_and_throw();
+        sycl_detail::add_event_kernel_time(event, timing);
     } catch (const sycl::exception& error) {
         throw std::runtime_error(std::string{"stencil2d_sycl failed: "} + error.what());
     }
