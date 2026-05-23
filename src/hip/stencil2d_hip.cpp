@@ -43,7 +43,8 @@ __global__ void stencil2d_kernel(const float* input,
 void stencil2d_hip(const std::span<const float> input,
                    std::span<float> output,
                    const std::size_t rows,
-                   const std::size_t cols) {
+                   const std::size_t cols,
+                   TimingResult* timing) {
     if ((rows * cols) != input.size()) {
         throw std::invalid_argument("stencil2d_hip: rows * cols must equal input.size()");
     }
@@ -70,9 +71,11 @@ void stencil2d_hip(const std::span<const float> input,
             static_cast<unsigned int>(hip_detail::ceil_div(rows, static_cast<std::size_t>(threads.y))),
             1U};
 
-        hipLaunchKernelGGL(stencil2d_kernel, blocks, threads, 0, 0, device_input, device_output, rows, cols);
-        hip_detail::hip_check(hipGetLastError(), "stencil2d_kernel launch");
-        hip_detail::hip_check(hipDeviceSynchronize(), "stencil2d_kernel synchronize");
+        hip_detail::launch_timed_kernel(
+            [&] { hipLaunchKernelGGL(stencil2d_kernel, blocks, threads, 0, 0, device_input, device_output, rows, cols); },
+            timing,
+            "stencil2d_kernel launch",
+            "stencil2d_kernel synchronize");
 
         hip_detail::hip_check(
             hipMemcpy(output.data(), device_output, sizeof(float) * output.size(), hipMemcpyDeviceToHost),
