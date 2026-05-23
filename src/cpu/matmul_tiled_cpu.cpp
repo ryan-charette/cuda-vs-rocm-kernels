@@ -11,7 +11,10 @@ void matmul_tiled_cpu(const std::span<const float> a,
                       const std::size_t m,
                       const std::size_t n,
                       const std::size_t k,
-                      const std::size_t tile_size) {
+                      const std::size_t tile_size,
+                      TimingResult* timing) {
+    static_cast<void>(timing);
+
     if (tile_size == 0U) {
         throw std::invalid_argument("matmul_tiled_cpu: tile_size must be greater than zero");
     }
