@@ -125,7 +125,8 @@ void run_matmul_tiled_hip(const std::span<const float> a,
                           const std::size_t m,
                           const std::size_t n,
                           const std::size_t k,
-                          const std::size_t tile_size) {
+                          const std::size_t tile_size,
+                          TimingResult* timing) {
     float* device_a = nullptr;
     float* device_b = nullptr;
     float* device_c = nullptr;
@@ -148,16 +149,19 @@ void run_matmul_tiled_hip(const std::span<const float> a,
                           static_cast<unsigned int>(hip_detail::ceil_div(m, tile_size)),
                           1U};
 
-        if (tile_size == 8U) {
-            hipLaunchKernelGGL(matmul_tiled_kernel_8, blocks, threads, 0, 0, device_a, device_b, device_c, m, n, k);
-        } else if (tile_size == 16U) {
-            hipLaunchKernelGGL(matmul_tiled_kernel_16, blocks, threads, 0, 0, device_a, device_b, device_c, m, n, k);
-        } else {
-            hipLaunchKernelGGL(matmul_tiled_kernel_32, blocks, threads, 0, 0, device_a, device_b, device_c, m, n, k);
-        }
-
-        hip_detail::hip_check(hipGetLastError(), "matmul_tiled kernel launch");
-        hip_detail::hip_check(hipDeviceSynchronize(), "matmul_tiled kernel synchronize");
+        hip_detail::launch_timed_kernel(
+            [&] {
+                if (tile_size == 8U) {
+                    hipLaunchKernelGGL(matmul_tiled_kernel_8, blocks, threads, 0, 0, device_a, device_b, device_c, m, n, k);
+                } else if (tile_size == 16U) {
+                    hipLaunchKernelGGL(matmul_tiled_kernel_16, blocks, threads, 0, 0, device_a, device_b, device_c, m, n, k);
+                } else {
+                    hipLaunchKernelGGL(matmul_tiled_kernel_32, blocks, threads, 0, 0, device_a, device_b, device_c, m, n, k);
+                }
+            },
+            timing,
+            "matmul_tiled kernel launch",
+            "matmul_tiled kernel synchronize");
 
         hip_detail::hip_check(hipMemcpy(c.data(), device_c, sizeof(float) * c.size(), hipMemcpyDeviceToHost),
                               "hipMemcpy D2H matmul C");
@@ -187,7 +191,8 @@ void matmul_tiled_hip(const std::span<const float> a,
                       const std::size_t m,
                       const std::size_t n,
                       const std::size_t k,
-                      const std::size_t tile_size) {
+                      const std::size_t tile_size,
+                      TimingResult* timing) {
     if (tile_size == 0U) {
         throw std::invalid_argument("matmul_tiled_hip: tile_size must be greater than zero");
     }
@@ -204,7 +209,7 @@ void matmul_tiled_hip(const std::span<const float> a,
         throw std::invalid_argument("matmul_tiled_hip: supported tile sizes are 8, 16, and 32");
     }
 
-    run_matmul_tiled_hip(a, b, c, m, n, k, tile_size);
+    run_matmul_tiled_hip(a, b, c, m, n, k, tile_size, timing);
 }
 
 }  // namespace pgkl
