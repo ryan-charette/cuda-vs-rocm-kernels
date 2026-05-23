@@ -12,6 +12,7 @@ option(PGKL_ENABLE_SYCL "Build SYCL backend" OFF)
 
 add_library(pgkl_common STATIC
   src/common/cli.cpp
+  src/common/metadata.cpp
 )
 target_include_directories(pgkl_common PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
@@ -37,6 +38,7 @@ if(PGKL_ENABLE_CUDA)
       src/cuda/reduction_cuda.cu
       src/cuda/stencil2d_cuda.cu
       src/cuda/matmul_tiled_cuda.cu
+      src/cuda/metadata_cuda.cu
     )
     set_target_properties(pgkl_cuda PROPERTIES
       CUDA_SEPARABLE_COMPILATION ON
@@ -48,7 +50,35 @@ if(PGKL_ENABLE_CUDA)
 endif()
 
 if(PGKL_ENABLE_HIP)
-  message(STATUS "HIP scaffold exists, but HIP build is not enabled in this starter CMake.")
+  check_language(HIP)
+  if(CMAKE_HIP_COMPILER)
+    enable_language(HIP)
+
+    if(NOT DEFINED CMAKE_HIP_ARCHITECTURES AND DEFINED ENV{AMDGPU_TARGETS})
+      set(CMAKE_HIP_ARCHITECTURES $ENV{AMDGPU_TARGETS})
+    endif()
+
+    add_library(pgkl_hip STATIC
+      src/hip/reduction_hip.cpp
+      src/hip/stencil2d_hip.cpp
+      src/hip/matmul_tiled_hip.cpp
+      src/hip/metadata_hip.cpp
+    )
+    set_source_files_properties(
+      src/hip/reduction_hip.cpp
+      src/hip/stencil2d_hip.cpp
+      src/hip/matmul_tiled_hip.cpp
+      src/hip/metadata_hip.cpp
+      PROPERTIES LANGUAGE HIP
+    )
+    set_target_properties(pgkl_hip PROPERTIES
+      HIP_STANDARD 20
+      HIP_STANDARD_REQUIRED ON
+    )
+    target_link_libraries(pgkl_hip PUBLIC pgkl_common)
+  else()
+    message(WARNING "PGKL_ENABLE_HIP=ON but no HIP compiler was detected; skipping HIP backend")
+  endif()
 endif()
 
 if(PGKL_ENABLE_SYCL)
@@ -61,9 +91,11 @@ if(PGKL_ENABLE_SYCL)
       src/sycl/reduction_sycl.cpp
       src/sycl/stencil2d_sycl.cpp
       src/sycl/matmul_tiled_sycl.cpp
+      src/sycl/metadata_sycl.cpp
     )
-    target_compile_options(pgkl_sycl PRIVATE ${PGKL_SYCL_FLAG})
-    target_link_options(pgkl_sycl PRIVATE ${PGKL_SYCL_FLAG})
+    target_compile_options(pgkl_sycl PUBLIC ${PGKL_SYCL_FLAG})
+    target_link_options(pgkl_sycl PUBLIC ${PGKL_SYCL_FLAG})
+    target_include_directories(pgkl_sycl PUBLIC ${PROJECT_SOURCE_DIR}/src/sycl)
     target_link_libraries(pgkl_sycl PUBLIC pgkl_common)
   else()
     message(WARNING "PGKL_ENABLE_SYCL=ON but compiler does not accept ${PGKL_SYCL_FLAG}; skipping SYCL backend")
