@@ -42,7 +42,8 @@ __global__ void stencil2d_kernel(const float* input,
 void stencil2d_cuda(const std::span<const float> input,
                     std::span<float> output,
                     const std::size_t rows,
-                    const std::size_t cols) {
+                    const std::size_t cols,
+                    TimingResult* timing) {
     if ((rows * cols) != input.size()) {
         throw std::invalid_argument("stencil2d_cuda: rows * cols must equal input.size()");
     }
@@ -69,9 +70,11 @@ void stencil2d_cuda(const std::span<const float> input,
             static_cast<unsigned int>(cuda_detail::ceil_div(rows, static_cast<std::size_t>(threads.y))),
             1U};
 
-        stencil2d_kernel<<<blocks, threads>>>(device_input, device_output, rows, cols);
-        cuda_detail::cuda_check(cudaGetLastError(), "stencil2d_kernel launch");
-        cuda_detail::cuda_check(cudaDeviceSynchronize(), "stencil2d_kernel synchronize");
+        cuda_detail::launch_timed_kernel(
+            [&] { stencil2d_kernel<<<blocks, threads>>>(device_input, device_output, rows, cols); },
+            timing,
+            "stencil2d_kernel launch",
+            "stencil2d_kernel synchronize");
 
         cuda_detail::cuda_check(
             cudaMemcpy(output.data(), device_output, sizeof(float) * output.size(), cudaMemcpyDeviceToHost),
