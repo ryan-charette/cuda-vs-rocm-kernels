@@ -7,7 +7,10 @@ namespace pgkl {
 void stencil2d_cpu(const std::span<const float> input,
                    std::span<float> output,
                    const std::size_t rows,
-                   const std::size_t cols) {
+                   const std::size_t cols,
+                   TimingResult* timing) {
+    static_cast<void>(timing);
+
     if ((rows * cols) != input.size()) {
         throw std::invalid_argument("stencil2d_cpu: rows * cols must equal input.size()");
     }
