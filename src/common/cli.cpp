@@ -32,6 +32,9 @@ auto parse_backend(const std::string_view value) -> std::optional<Backend> {
     if (value == "hip") {
         return Backend::HIP;
     }
+    if (value == "sycl") {
+        return Backend::SYCL;
+    }
     return std::nullopt;
 }
 
@@ -103,6 +106,14 @@ auto parse_args(const int argc, char** argv) -> BenchConfig {
             continue;
         }
 
+        if (argument == "--warmups") {
+            config.warmups = parse_integer<int>(require_value("--warmups"), "--warmups");
+            if (config.warmups < 0) {
+                throw std::runtime_error("--warmups must be greater than or equal to zero");
+            }
+            continue;
+        }
+
         if (argument == "--tile-size") {
             config.tile_size = parse_integer<std::size_t>(require_value("--tile-size"), "--tile-size");
             if (config.tile_size == 0U) {
@@ -117,6 +128,11 @@ auto parse_args(const int argc, char** argv) -> BenchConfig {
                 throw std::runtime_error("invalid output format");
             }
             config.format = *parsed;
+            continue;
+        }
+
+        if (argument == "--skip-correctness") {
+            config.check_correctness = false;
             continue;
         }
 
