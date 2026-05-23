@@ -46,7 +46,7 @@ __global__ void reduction_kernel(const float* __restrict__ input, float* __restr
 
 }  // namespace
 
-auto reduction_hip(const std::span<const float> input) -> float {
+auto reduction_hip(const std::span<const float> input, TimingResult* timing) -> float {
     if (input.empty()) {
         return 0.0F;
     }
@@ -73,17 +73,20 @@ auto reduction_hip(const std::span<const float> input) -> float {
             hip_detail::hip_check(hipMalloc(reinterpret_cast<void**>(&device_partial), sizeof(float) * block_count),
                                   "hipMalloc reduction partial sums");
 
-            hipLaunchKernelGGL(reduction_kernel,
-                               dim3(static_cast<unsigned int>(block_count)),
-                               dim3(kThreadsPerBlock),
-                               sizeof(float) * kThreadsPerBlock,
-                               0,
-                               current_input,
-                               device_partial,
-                               static_cast<int>(current_count));
-
-            hip_detail::hip_check(hipGetLastError(), "reduction_kernel launch");
-            hip_detail::hip_check(hipDeviceSynchronize(), "reduction_kernel synchronize");
+            hip_detail::launch_timed_kernel(
+                [&] {
+                    hipLaunchKernelGGL(reduction_kernel,
+                                       dim3(static_cast<unsigned int>(block_count)),
+                                       dim3(kThreadsPerBlock),
+                                       sizeof(float) * kThreadsPerBlock,
+                                       0,
+                                       current_input,
+                                       device_partial,
+                                       static_cast<int>(current_count));
+                },
+                timing,
+                "reduction_kernel launch",
+                "reduction_kernel synchronize");
 
             if (current_input_needs_free) {
                 hip_detail::hip_check(hipFree(current_input), "hipFree previous reduction buffer");
