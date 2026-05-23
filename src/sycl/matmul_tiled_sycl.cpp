@@ -1,6 +1,7 @@
 #include "pgkl/matmul_tiled.hpp"
 
 #include "sycl_compat.hpp"
+#include "sycl_timing.hpp"
 
 #include <stdexcept>
 #include <string>
@@ -14,10 +15,11 @@ void run_matmul_kernel(const std::span<const float> a,
                        std::span<float> c,
                        const std::size_t m,
                        const std::size_t n,
-                       const std::size_t k) {
+                       const std::size_t k,
+                       TimingResult* timing) {
     namespace sycl = pgkl::sycl_compat;
 
-    sycl::queue queue{sycl::default_selector_v};
+    auto queue = sycl_detail::make_queue(timing);
     sycl::buffer<float> a_buffer(a.data(), sycl::range<1>(a.size()));
     sycl::buffer<float> b_buffer(b.data(), sycl::range<1>(b.size()));
     sycl::buffer<float> c_buffer(c.data(), sycl::range<1>(c.size()));
@@ -25,7 +27,7 @@ void run_matmul_kernel(const std::span<const float> a,
     const std::size_t global_rows = ((m + TileSize - 1U) / TileSize) * TileSize;
     const std::size_t global_cols = ((n + TileSize - 1U) / TileSize) * TileSize;
 
-    queue.submit([&](sycl::handler& cgh) {
+    const auto event = queue.submit([&](sycl::handler& cgh) {
         auto acc_a = a_buffer.template get_access<sycl::access::mode::read>(cgh);
         auto acc_b = b_buffer.template get_access<sycl::access::mode::read>(cgh);
         auto acc_c = c_buffer.template get_access<sycl::access::mode::discard_write>(cgh);
@@ -62,6 +64,7 @@ void run_matmul_kernel(const std::span<const float> a,
             });
     });
     queue.wait_and_throw();
+    sycl_detail::add_event_kernel_time(event, timing);
 }
 
 }  // namespace
@@ -72,7 +75,8 @@ void matmul_tiled_sycl(const std::span<const float> a,
                        const std::size_t m,
                        const std::size_t n,
                        const std::size_t k,
-                       const std::size_t tile_size) {
+                       const std::size_t tile_size,
+                       TimingResult* timing) {
     if (tile_size == 0U) {
         throw std::invalid_argument("matmul_tiled_sycl: tile_size must be greater than zero");
     }
@@ -89,13 +93,13 @@ void matmul_tiled_sycl(const std::span<const float> a,
     try {
         switch (tile_size) {
             case 8U:
-                run_matmul_kernel<8U>(a, b, c, m, n, k);
+                run_matmul_kernel<8U>(a, b, c, m, n, k, timing);
                 break;
             case 16U:
-                run_matmul_kernel<16U>(a, b, c, m, n, k);
+                run_matmul_kernel<16U>(a, b, c, m, n, k, timing);
                 break;
             case 32U:
-                run_matmul_kernel<32U>(a, b, c, m, n, k);
+                run_matmul_kernel<32U>(a, b, c, m, n, k, timing);
                 break;
             default:
                 throw std::invalid_argument("matmul_tiled_sycl: supported tile sizes are 8, 16, and 32");
